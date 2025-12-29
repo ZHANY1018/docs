@@ -163,3 +163,73 @@ page_content='Rockies' metadata={' "Payroll (millions)"': 78.06, ' "Wins"': 64}
 page_content='Cubs' metadata={' "Payroll (millions)"': 88.19, ' "Wins"': 61}
 page_content='Astros' metadata={' "Payroll (millions)"': 60.65, ' "Wins"': 55}
 ```
+
+## DataFrame Aggregation and Grouping
+
+When working with complex DataFrames that need to be aggregated before loading into LangChain, you can perform grouping and aggregation operations. Here's an example of aggregating data by multiple columns:
+
+```python
+import pandas as pd
+import numpy as np
+
+# Example: Create a sample DataFrame with medical insurance claims data
+# This demonstrates grouping by City (市), Drug Type (药品类型), and Year/Month (年/月)
+# while merging different Insurance Types (医保类型) into "All" (全部)
+
+# Sample data structure
+data = {
+    '区域': ['East', 'East', 'East', 'West', 'West', 'West'],
+    '省': ['Province A', 'Province A', 'Province A', 'Province B', 'Province B', 'Province B'],
+    '市': ['City 1', 'City 1', 'City 2', 'City 3', 'City 3', 'City 4'],
+    '药品类型': ['Type A', 'Type A', 'Type B', 'Type A', 'Type B', 'Type B'],
+    '医保类型': ['Medicare', 'Medicaid', 'Medicare', 'Medicaid', 'Medicare', 'Medicaid'],
+    '年/月': ['2024-01', '2024-01', '2024-01', '2024-01', '2024-02', '2024-02'],
+    '累计在组': [100, 150, 200, 180, 220, 190],
+    '当月入组人数': [10, 15, 20, 18, 22, 19],
+    '当月理赔人数': [8, 12, 15, 14, 18, 16],
+    '当月理赔人次': [12, 18, 22, 20, 25, 23],
+    '药品理赔人数': [5, 8, 10, 9, 12, 11],
+    '药品理赔人次': [8, 12, 15, 13, 17, 16],
+    '理赔总金额': [50000.5, 75000.0, np.nan, 85000.0, 110000.0, 95000.0],
+    '药品理赔总金额': [30000.0, 45000.0, 60000.0, np.nan, 65000.0, 55000.0]
+}
+
+df = pd.DataFrame(data)
+
+# Step 1: Replace NaN values with 0
+df = df.fillna(0)
+
+# Step 2: Set '医保类型' to '全部' (All) to merge different insurance types
+df['医保类型'] = '全部'
+
+# Step 3: Define the grouping columns
+group_columns = ['市', '药品类型', '年/月']
+
+# Step 4: Get all numeric columns for aggregation
+numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
+
+# Step 5: Create aggregation dictionary - sum all numeric columns
+agg_dict = {col: 'sum' for col in numeric_columns}
+
+# Step 6: Group by specified columns and aggregate
+result_df = df.groupby(group_columns, as_index=False).agg(agg_dict)
+
+# Add back the constant columns (医保类型 is now '全部' for all rows)
+result_df['医保类型'] = '全部'
+
+print("Aggregated DataFrame:")
+print(result_df)
+
+# Now you can load this aggregated DataFrame into LangChain
+loader = DataFrameLoader(result_df, page_content_column="市")
+documents = loader.load()
+```
+
+This example demonstrates how to:
+
+1. **Replace NaN values** with 0 using `fillna(0)`
+2. **Merge insurance types** by setting all values in the '医保类型' column to '全部'
+3. **Group by multiple columns** ('市', '药品类型', '年/月')
+4. **Aggregate numeric fields** by summing them using `groupby()` with `sum()`
+
+The resulting DataFrame will have one row per unique combination of City, Drug Type, and Year/Month, with all numeric fields summed across different insurance types.

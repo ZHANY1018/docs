@@ -214,13 +214,15 @@ agg_dict = {col: 'sum' for col in numeric_columns}
 # Step 6: Group by specified columns and aggregate
 result_df = df.groupby(group_columns, as_index=False).agg(agg_dict)
 
-# Add back the constant columns (医保类型 is now '全部' for all rows)
+# Note: After grouping, non-grouped and non-aggregated columns like '医保类型' are dropped
+# Add it back as a constant column since all insurance types have been merged
 result_df['医保类型'] = '全部'
 
 print("Aggregated DataFrame:")
 print(result_df)
 
 # Now you can load this aggregated DataFrame into LangChain
+# Note: DataFrameLoader is already imported at the top of this document
 loader = DataFrameLoader(result_df, page_content_column="市")
 documents = loader.load()
 ```

@@ -223,6 +223,7 @@ print(result_df)
 
 # Now you can load this aggregated DataFrame into LangChain
 # Note: DataFrameLoader is already imported at the top of this document
+# Using '市' (City in Chinese) as the page_content_column for this example
 loader = DataFrameLoader(result_df, page_content_column="市")
 documents = loader.load()
 ```
